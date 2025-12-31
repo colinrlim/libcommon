@@ -3,25 +3,95 @@
 
 #include <common/types.h>
 
-// ============================================================================
-// Path Syntax
-// ============================================================================
-//
-// JSON paths support the following syntax:
-//   NULL             Root value
-//   "field"          Object field at root
-//   "parent.child"   Nested object field
-//   "[0]"            Array element (when root is array)
-//   "[0].field"      Field in array element
-//   "array[0]"       Element in named array
-//   "a.b[0].c"       Complex nested path
-//
-// Examples:
-//   json_get_i64(json, "user.id", &id);
-//   json_get_string(json, "items[0].name", &name);
-//   json_get_value(json, NULL, &root);
-//
-// ============================================================================
+/*
+ * ============================================================================
+ * Path Syntax
+ * ============================================================================
+ * 
+ * JSON paths support the following syntax:
+ *   NULL             Root value
+ *   "field"          Object field at root
+ *   "parent.child"   Nested object field
+ *   "[0]"            Array element (when root is array)
+ *   "[0].field"      Field in array element
+ *   "array[0]"       Element in named array
+ *   "a.b[0].c"       Complex nested path
+ * 
+ * Examples:
+ *   json_get_i64(json, "user.id", &id);
+ *   json_get_string(json, "items[0].name", &name);
+ *   json_get_value(json, NULL, &root);
+ * 
+ * ============================================================================
+ */
+
+/*
+ * ============================================================================
+ * API Overview
+ * ============================================================================
+ * 
+ * The JSON parser provides four extraction API levels, each following the
+ * same pattern with different source parameters:
+ * 
+ * Pattern: json{SOURCE}_get_{TYPE}({SOURCE_PARAMS}, {TYPE_PARAMS})
+ * 
+ * Where SOURCE is:
+ *   (empty)   - Direct extraction from JSON buffer
+ *               json_get_*(data_buf json_data, const char* path, ...)
+ * 
+ *   _cursor   - Extraction from cached location
+ *               json_cursor_get_*(json_cursor cursor, ...)
+ * 
+ *   _value    - Extraction from nested container
+ *               json_value_get_*(const json_value* parent, const char* path, ...)
+ * 
+ *   _indexed  - Extraction from indexed container (O(1) lookups)
+ *               json_indexed_get_*(const json_indexed* idx, const char* key, ...)
+ * 
+ * Where TYPE is one of:
+ *   type, value, null, true, false, i64, f64, string, bool
+ * 
+ * Key behaviors:
+ *   - _get_type() returns unvalidated guesses based on first character
+ *   - _get_i64() rejects floats; use _get_f64() for lenient number parsing
+ *   - _get_f64() accepts both integers and floats
+ *   - _get_null/true/false() return 0 if match, -1 otherwise
+ * 
+ * Additional functions at each level:
+ *   json_has_key()         - Check existence + optional cursor output
+ *   json_value_has_key()   - Check existence in container + optional cursor
+ *   json_indexed_has_key() - Check existence in index (O(1)) + optional cursor
+ *   (No json_cursor_has_key - cursor already represents found value)
+ * 
+ * Performance guide:
+ *   Single field:
+ *       json_get_*()
+ * 
+ *   Multiple fields (static paths):
+ *       json_query queries[] = {
+ *           JSON_QUERY_I64("user.id", &user_id),
+ *           JSON_QUERY_STRING("user.name", &user_name),
+ *           JSON_QUERY_STRING("user.email", &user_email),
+ *       };
+ *       json_get_batch(json, queries, 3);
+ * 
+ *   Multiple fields (dynamic container):
+ *       json_value user;
+ *       json_get_value(json, "user", &user);
+ *       json_indexed idx;
+ *       json_index(&user, &idx);
+ *       json_indexed_get_i64(&idx, "id", &id);
+ *       json_indexed_get_string(&idx, "name", &name);
+ *       json_indexed_free(&idx);
+ * 
+ *   Check then extract:
+ *       json_cursor cursor;
+ *       if (json_has_key(json, "user.name", &cursor)) {
+ *           json_cursor_get_string(cursor, &name);
+ *       }
+ * 
+ * ============================================================================
+ */
 
 // ============================================================================
 // Type System
