@@ -1,56 +1,21 @@
 #ifndef COMMON_STRCONV_H
 #define COMMON_STRCONV_H
 
-#include <common/types.h>
+#include <common/internal/conv_impl.h>
 
-/**
- * Result codes for string conversion operations.
- */
-typedef enum STRCONV_RESULT {
-    STRCONV_RESULT_SUCCESS              = 0, ///< Parsing completed successfully
-    STRCONV_RESULT_INVALID_CHARACTER    = -1 ///< Parsing stopped due to a non-digit character
-} STRCONV_RESULT;
+#define STRCONV_RESULT_SUCCESS              CONV_RESULT_SUCCESS
+#define STRCONV_RESULT_INVALID_CHARACTER    CONV_RESULT_INVALID_CHARACTER
 
 // Internal macros for generating conversion logic
-#define STRCONV_INT_UNCHECKED(str, out, on_return)              \
-    do { *out = 0; while (*str)                                 \
-            *out = (*out << 3) + (*out << 1) + (*str++ & 0xF);  \
-        on_return;                                              \
-        return STRCONV_RESULT_SUCCESS;                          \
-    } while (0)                                                 \
-
 #define STRCONV_INT(str, out, on_return)                        \
-    do { *out = 0;                                              \
-        while (1) {                                             \
-            const u8 c = (const u8)(*str - '0');                \
-            if (c > 9) break;                                   \
-            *out = (*out * 10) + c;                             \
-            str++;                                              \
-        }                                                       \
-        on_return;                                              \
-        return *str ? STRCONV_RESULT_INVALID_CHARACTER          \
-            : STRCONV_RESULT_SUCCESS;                           \
-    } while (0)                                                 \
+    CONV_INT_IMPL(*str, out,, on_return, (1), (*str), str++)    \
 
-#define STRCONV_FLOAT(str, out, on_return, T, suffix)           \
-    STRCONV_INT(str, out, {                                     \
-        if (*str == '.') {                                      \
-            str++;                                              \
-            T divisor = 10.##suffix;                            \
-            while (1) {                                         \
-                const u8 c = (const u8)(*str - '0');            \
-                if (c > 9) break;                               \
-                *out += c / divisor;                            \
-                divisor *= 10.##suffix;                         \
-                str++;                                          \
-            }                                                   \
-        }                                                       \
-        on_return;                                              \
-    })                                                          \
+#define STRCONV_FLOAT(str, out, on_return, T, suffix)                       \
+    CONV_FLOAT_IMPL(*str, out,, on_return, (1), (*str), str++, T, suffix)   \
 
 #define STRCONV_SIGNED(OP, str, out)                            \
     do {                                                        \
-        const u8 is_neg = (*str == '-' && str++);               \
+        const u8 is_neg = (*str == '-' && ++str);               \
         STRCONV_##OP(str, out, if (is_neg) *out = -(*out));     \
     } while (0)                                                 \
 

@@ -1,47 +1,17 @@
 #ifndef COMMON_BUFCONV_H
 #define COMMON_BUFCONV_H
 
-#include <common/types.h>
+#include <common/internal/conv_impl.h>
 
-/**
- * Result codes for buffer conversion operations.
- */
-typedef enum BUFCONV_RESULT {
-    BUFCONV_RESULT_SUCCESS              = 0, ///< Parsing completed successfully
-    BUFCONV_RESULT_INVALID_CHARACTER    = -1 ///< Parsing stopped due to a non-digit character
-} BUFCONV_RESULT;
+#define BUFCONV_RESULT_SUCCESS              CONV_RESULT_SUCCESS
+#define BUFCONV_RESULT_INVALID_CHARACTER    CONV_RESULT_INVALID_CHARACTER
 
 // Internal macros for generating conversion logic
-#define BUFCONV_INT(ptr, n, out, on_return)                 \
-    do {                                                    \
-        size_t i = 0;                                       \
-        *out = 0;                                           \
-        while (i < n) {                                     \
-            const u8 c = (const u8)(ptr[i] - '0');          \
-            if (c > 9) break;                               \
-            *out = (*out * 10) + c;                         \
-            i++;                                            \
-        }                                                   \
-        on_return;                                          \
-        return (i == n || !ptr[i]) ? BUFCONV_RESULT_SUCCESS \
-            : BUFCONV_RESULT_INVALID_CHARACTER;             \
-    } while (0)                                             \
+#define BUFCONV_INT(ptr, n, out, on_return)                                                 \
+    CONV_INT_IMPL(ptr[i], out, size_t i = 0, on_return, (i < n), (i < n && ptr[i]), i++)    \
 
-#define BUFCONV_FLOAT(ptr, n, out, on_return, T, suffix)    \
-    BUFCONV_INT(ptr, n, out, {                              \
-        if (ptr[i] == '.') {                                \
-            i++;                                            \
-            T divisor = 10.##suffix;                        \
-            while (i < n) {                                 \
-                const u8 c = (const u8)(ptr[i] - '0');      \
-                if (c > 9) break;                           \
-                *out += c / divisor;                        \
-                divisor *= 10.##suffix;                     \
-                i++;                                        \
-            }                                               \
-        }                                                   \
-        on_return;                                          \
-    })                                                      \
+#define BUFCONV_FLOAT(ptr, n, out, on_return, T, suffix)                                                \
+    CONV_FLOAT_IMPL(ptr[i], out, size_t i = 0, on_return, (i < n), (i < n && ptr[i]), i++, T, suffix)   \
 
 #define BUFCONV_SIGNED(OP, ptr, n, out)                         \
     do {                                                        \
