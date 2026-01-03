@@ -50,7 +50,7 @@ typedef enum STRCONV_RESULT {
 
 #define STRCONV_SIGNED(OP, str, out)                            \
     do {                                                        \
-        u8 is_neg = (*str == '-' && str++);                     \
+        const u8 is_neg = (*str == '-' && str++);               \
         STRCONV_##OP(str, out, if (is_neg) *out = -(*out));     \
     } while (0)                                                 \
 
