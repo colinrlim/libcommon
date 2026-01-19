@@ -1,5 +1,5 @@
-#ifndef COMMON_FORMATS_JSON_H
-#define COMMON_FORMATS_JSON_H
+#ifndef COMMON_FORMATS_JSON_READ_H
+#define COMMON_FORMATS_JSON_READ_H
 
 #include <common/types.h>
 
@@ -986,4 +986,4 @@ void json_expr_free(json_expr* expr);
  */
 int json_validate(data_buf json_data);
 
-#endif // COMMON_FORMATS_JSON_H
+#endif // COMMON_FORMATS_JSON_READ_H
