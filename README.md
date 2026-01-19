@@ -20,15 +20,37 @@ libcommon provides foundational utilities used across multiple projects (GatorSt
 - `str_view`: Zero-copy string view (pointer + length)
 - `data_buf`: Generic buffer descriptor
 
+### Hashing (`hash.h`)
+- `str_hash()`: FNV-1a hash for `str_view` keys
+- `str_eq()`: String equality comparison
+- Returns minimum 1 (0 reserved for empty slots in open-addressed tables)
+
+### Dynamic Buffer (`buf.h`)
+- Macro-generated type-safe dynamic arrays via `DEFINE_BUFFER(T, T_STRUCT)`
+- Amortized O(1) push, batch append
+- Doubles capacity on growth (initial minimum: 8 elements)
+
+### Hash Map (`map.h`)
+- Macro-generated type-safe hash maps via `DEFINE_MAP(T, T_STRUCT)`
+- `str_view` keys with open addressing and linear probing
+- 70% load factor, automatic growth
+
+### Symbol Table (`symbol_table.h`)
+- Macro-generated scoped hash map via `DEFINE_SYMBOL_TABLE(T, T_STRUCT)`
+- Push/pop scope with automatic restore of shadowed values
+- Useful for compilers, interpreters, template engines, config overlays
+
 ### ASCII Operations (`ascii_mask.h`)
 - 128-bit character set bitmaps for ASCII 0-127
 - O(1) character class checking (digits, hex, alphanumeric, whitespace)
 - Predefined masks: `ASCII_MASK_DIGITS`, `ASCII_MASK_HEX`, `ASCII_MASK_IDENTIFIER`, etc.
 - Efficient range operations for character classes
 
-### String Conversion (`strconv.h`)
-- Fast integer parsing: `strconv_u32()`, `strconv_i64()`, etc.
-- Floating-point parsing: `strconv_f32_signed()`, `strconv_f64_unsigned()`
+### String Conversion (`strconv.h`, `bufconv.h`)
+- Fast integer parsing: `strconv_u32()`, `bufconv_i64()`, etc.
+- Floating-point parsing: `strconv_f32_signed()`, `bufconv_f64_unsigned()`
+- `strconv_*`: Null-terminated strings
+- `bufconv_*`: Bounded buffers (pairs with `str_view`)
 - Zero-allocation, inline functions
 - No overflow checking (caller responsibility for bounded inputs)
 
@@ -163,6 +185,97 @@ int main(void) {
 }
 ```
 
+### Dynamic Buffer
+```c
+#include <common/buf.h>
+#include <common/types.h>
+#include <stdio.h>
+
+DEFINE_BUFFER(i32, int_buf)
+
+int main(void) {
+    int_buf buf;
+    int_buf_init(&buf, 16);
+    
+    // Amortized O(1) push
+    for (i32 i = 0; i < 100; i++) {
+        int_buf_push(&buf, i * i);
+    }
+    
+    printf("Count: %zu, Capacity: %zu\n", buf.count, buf.cap);
+    
+    int_buf_free(&buf);
+    return 0;
+}
+```
+
+### Hash Map
+```c
+#include <common/map.h>
+#include <common/types.h>
+#include <stdio.h>
+
+typedef struct user {
+    i32 id;
+    i32 age;
+} user;
+
+DEFINE_MAP(user, user_map)
+
+int main(void) {
+    user_map users;
+    user_map_init(&users, 64);
+    
+    user_map_set(&users, (str_view){"alice", 5}, (user){1, 30});
+    user_map_set(&users, (str_view){"bob", 3}, (user){2, 25});
+    
+    user* found = user_map_get(&users, (str_view){"alice", 5});
+    if (found) {
+        printf("Found alice: id=%d, age=%d\n", found->id, found->age);
+    }
+    
+    user_map_free(&users);
+    return 0;
+}
+```
+
+### Symbol Table with Scoping
+```c
+#include <common/symbol_table.h>
+#include <common/types.h>
+#include <stdio.h>
+
+typedef struct var_def {
+    i32 value;
+} var_def;
+
+DEFINE_SYMBOL_TABLE(var_def, var_table)
+
+int main(void) {
+    var_table vars;
+    var_table_init(&vars);
+    
+    // Global scope
+    var_table_insert(&vars, (str_view){"x", 1}, (var_def){10});
+    
+    var_table_push_scope(&vars);
+    {
+        // Inner scope shadows x
+        var_table_insert(&vars, (str_view){"x", 1}, (var_def){20});
+        
+        var_def* x = var_table_lookup(&vars, (str_view){"x", 1});
+        printf("Inner x = %d\n", x->value);  // Prints 20
+    }
+    var_table_pop_scope(&vars);
+    
+    var_def* x = var_table_lookup(&vars, (str_view){"x", 1});
+    printf("Outer x = %d\n", x->value);  // Prints 10
+    
+    var_table_free(&vars);
+    return 0;
+}
+```
+
 ### ASCII Character Classes
 ```c
 #include <common/ascii_mask.h>
@@ -193,14 +306,22 @@ int main(void) {
 ### String Conversion
 ```c
 #include <common/strconv.h>
+#include <common/bufconv.h>
 #include <stdio.h>
 
 int main(void) {
-    // Fast integer parsing
+    // Null-terminated string parsing
     const char* num_str = "42";
     u32 value;
     if (strconv_u32(num_str, &value) == STRCONV_RESULT_SUCCESS) {
         printf("Parsed: %u\n", value);
+    }
+    
+    // Bounded buffer parsing (pairs with str_view)
+    str_view bounded = { "12345", 3 };  // Only parse "123"
+    u32 partial;
+    if (bufconv_u32(bounded.ptr, bounded.len, &partial) == BUFCONV_RESULT_SUCCESS) {
+        printf("Parsed bounded: %u\n", partial);
     }
     
     // Float parsing
@@ -309,7 +430,7 @@ int main(void) {
 
 ### Zero-Cost Abstractions
 - `str_view` instead of string copies
-- Macros for code generation (`DEFINE_MATH_VEC`, `STRCONV_*`)
+- Macros for code generation (`DEFINE_BUFFER`, `DEFINE_MAP`, `DEFINE_SYMBOL_TABLE`)
 - Compile-time decisions via inlining
 
 ### Const Correctness
@@ -331,10 +452,20 @@ libcommon/
 ├── include/
 │   └── common/
 │       ├── types.h           # Core type definitions
+│       ├── compiler.h        # Compiler detection and attributes
+│       ├── hash.h            # FNV-1a hashing, string comparison
+│       ├── buf.h             # Generic dynamic buffer
+│       ├── map.h             # Generic hash map
+│       ├── symbol_table.h    # Scoped hash map
 │       ├── ascii_mask.h      # ASCII character sets
-│       ├── strconv.h         # String conversion
+│       ├── strconv.h         # String conversion (null-terminated)
+│       ├── bufconv.h         # Buffer conversion (bounded)
 │       ├── mmap.h            # Memory-mapped files
 │       ├── math_types.h      # Vector math types
+│       ├── internal/
+│       │   └── conv_impl.h   # Shared conversion implementation
+│       ├── formats/
+│       │   └── json_read.h   # JSON parsing
 │       └── regex/
 │           └── regex_expr.h  # Regex lexer
 ├── src/
