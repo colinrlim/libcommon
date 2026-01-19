@@ -1,6 +1,7 @@
 #ifndef COMMON_ASCII_MASK_H
 #define COMMON_ASCII_MASK_H
 
+#include <common/compiler.h>
 #include <stdint.h>
 
 /**
@@ -20,7 +21,7 @@ typedef struct {
  * @param mask  Pointer to the ascii_mask to modify
  * @param c     The character to add (Must be < 128)
  */
-static inline void __attribute__((always_inline)) ascii_mask_add_char(
+ALWAYS_INLINE void ascii_mask_add_char(
         ascii_mask* const restrict  mask,
         const uint8_t               c) {
     mask->chunks[c >> 6] |= (1ULL << (c & 63));
@@ -36,7 +37,7 @@ static inline void __attribute__((always_inline)) ascii_mask_add_char(
  * @param start The starting character of the range (inclusive)
  * @param end   The ending character of the range (inclusive)
  */
-static inline void __attribute__((always_inline)) ascii_mask_add_range(
+ALWAYS_INLINE void ascii_mask_add_range(
         ascii_mask* const restrict  mask,
         const uint8_t               start,
         const uint8_t               end) {
@@ -61,7 +62,7 @@ static inline void __attribute__((always_inline)) ascii_mask_add_range(
  * @param c     The character to check
  * @return 1 if the character is present, 0 otherwise
  */
-static inline int __attribute__((always_inline)) ascii_mask_check(
+ALWAYS_INLINE int ascii_mask_check(
         const ascii_mask*   const restrict  mask,
         const uint8_t                       c) {
     return (mask->chunks[c >> 6] >> (c & 63)) & 1;

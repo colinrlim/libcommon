@@ -1,10 +1,8 @@
 #ifndef COMMON_MATH_TYPES_H
 #define COMMON_MATH_TYPES_H
 
+#include <common/compiler.h>
 #include <math.h> // sqrtf, acosf, etc.
-
-/* --- Compiler Abstraction --- */
-#define MATH_INLINE(T) static inline T __attribute__((always_inline))
 
 /* --- Constants --- */
 #define MATH_PI         3.14159265358979323846
@@ -80,12 +78,12 @@ _MATH_VEC_GEN_SCA_OP(T, T_STRUCT, sub, -, N)    \
 _MATH_VEC_GEN_SCA_OP(T, T_STRUCT, mul, *, N)    \
 _MATH_VEC_GEN_SCA_OP(T, T_STRUCT, div, /, N)    \
                                                 \
-MATH_INLINE(T) T_STRUCT##_sum(T_STRUCT vec) {           \
+ALWAYS_INLINE T_STRUCT##_sum(T_STRUCT vec) {            \
     T result;                                           \
     _MATH_VEC_SUM_##N(vec, result);                     \
     return result;                                      \
 }                                                       \
-MATH_INLINE(T) T_STRUCT##_dot(T_STRUCT a, T_STRUCT b) { \
+ALWAYS_INLINE T_STRUCT##_dot(T_STRUCT a, T_STRUCT b) {  \
     T_STRUCT temp = T_STRUCT##_mul(a, b);               \
     return T_STRUCT##_sum(temp);                        \
 }                                                       \

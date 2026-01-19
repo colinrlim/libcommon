@@ -2,6 +2,7 @@
 #define COMMON_STRCONV_H
 
 #include <common/internal/conv_impl.h>
+#include <common/compiler.h>
 
 #define STRCONV_RESULT_SUCCESS              CONV_RESULT_SUCCESS
 #define STRCONV_RESULT_INVALID_CHARACTER    CONV_RESULT_INVALID_CHARACTER
@@ -45,25 +46,25 @@
  * represents a value that fits within u8 (0-255). Larger values will
  * wrap around silently.
  */
-static inline int __attribute__((always_inline)) strconv_u8(const char* str, u8* out) { STRCONV_INT_UNSIGNED(str, out); }
+ALWAYS_INLINE int strconv_u8(const char* str, u8* out) { STRCONV_INT_UNSIGNED(str, out); }
 
 /**
  * Converts a string to an unsigned integer (u16).
  * @see strconv_u8 for warnings regarding overflow.
  */
-static inline int __attribute__((always_inline)) strconv_u16(const char* str, u16* out) { STRCONV_INT_UNSIGNED(str, out); }
+ALWAYS_INLINE int strconv_u16(const char* str, u16* out) { STRCONV_INT_UNSIGNED(str, out); }
 
 /**
  * Converts a string to an unsigned integer (u32).
  * @see strconv_u8 for warnings regarding overflow.
  */
-static inline int __attribute__((always_inline)) strconv_u32(const char* str, u32* out) { STRCONV_INT_UNSIGNED(str, out); }
+ALWAYS_INLINE int strconv_u32(const char* str, u32* out) { STRCONV_INT_UNSIGNED(str, out); }
 
 /**
  * Converts a string to an unsigned integer (u64).
  * @see strconv_u8 for warnings regarding overflow.
  */
-static inline int __attribute__((always_inline)) strconv_u64(const char* str, u64* out) { STRCONV_INT_UNSIGNED(str, out); }
+ALWAYS_INLINE int strconv_u64(const char* str, u64* out) { STRCONV_INT_UNSIGNED(str, out); }
 
 
 // --------------------------------------------------------------------------
@@ -81,25 +82,25 @@ static inline int __attribute__((always_inline)) strconv_u64(const char* str, u6
  * @warning **NO OVERFLOW CHECK:** The caller must ensure the input string
  * fits within the range of i8 (-128 to 127).
  */
-static inline int __attribute__((always_inline)) strconv_i8(const char* str, i8* out) { STRCONV_INT_SIGNED(str, out); }
+ALWAYS_INLINE int strconv_i8(const char* str, i8* out) { STRCONV_INT_SIGNED(str, out); }
 
 /**
  * Converts a string to a signed integer (i16).
  * @see strconv_i8 for warnings regarding overflow.
  */
-static inline int __attribute__((always_inline)) strconv_i16(const char* str, i16* out) { STRCONV_INT_SIGNED(str, out); }
+ALWAYS_INLINE int strconv_i16(const char* str, i16* out) { STRCONV_INT_SIGNED(str, out); }
 
 /**
  * Converts a string to a signed integer (i32).
  * @see strconv_i8 for warnings regarding overflow.
  */
-static inline int __attribute__((always_inline)) strconv_i32(const char* str, i32* out) { STRCONV_INT_SIGNED(str, out); }
+ALWAYS_INLINE int strconv_i32(const char* str, i32* out) { STRCONV_INT_SIGNED(str, out); }
 
 /**
  * Converts a string to a signed integer (i64).
  * @see strconv_i8 for warnings regarding overflow.
  */
-static inline int __attribute__((always_inline)) strconv_i64(const char* str, i64* out) { STRCONV_INT_SIGNED(str, out); }
+ALWAYS_INLINE int strconv_i64(const char* str, i64* out) { STRCONV_INT_SIGNED(str, out); }
 
 
 // --------------------------------------------------------------------------
@@ -115,13 +116,13 @@ static inline int __attribute__((always_inline)) strconv_i64(const char* str, i6
  * @return STRCONV_RESULT_SUCCESS or STRCONV_RESULT_INVALID_CHARACTER
  * @warning **NO OVERFLOW/PRECISION CHECK:** Caller is responsible for bounds.
  */
-static inline int __attribute__((always_inline)) strconv_f32_unsigned(const char* str, f32* out) { STRCONV_FLOAT32_UNSIGNED(str, out); }
+ALWAYS_INLINE int strconv_f32_unsigned(const char* str, f32* out) { STRCONV_FLOAT32_UNSIGNED(str, out); }
 
 /**
  * Converts a string to an unsigned double (f64).
  * @see strconv_f32_unsigned
  */
-static inline int __attribute__((always_inline)) strconv_f64_unsigned(const char* str, f64* out) { STRCONV_FLOAT64_UNSIGNED(str, out); }
+ALWAYS_INLINE int strconv_f64_unsigned(const char* str, f64* out) { STRCONV_FLOAT64_UNSIGNED(str, out); }
 
 /**
  * Converts a string to a signed float (f32).
@@ -132,12 +133,12 @@ static inline int __attribute__((always_inline)) strconv_f64_unsigned(const char
  * @return STRCONV_RESULT_SUCCESS or STRCONV_RESULT_INVALID_CHARACTER
  * @warning **NO OVERFLOW/PRECISION CHECK:** Caller is responsible for bounds.
  */
-static inline int __attribute__((always_inline)) strconv_f32_signed(const char* str, f32* out) { STRCONV_FLOAT32_SIGNED(str, out); }
+ALWAYS_INLINE int strconv_f32_signed(const char* str, f32* out) { STRCONV_FLOAT32_SIGNED(str, out); }
 
 /**
  * Converts a string to a signed double (f64).
  * @see strconv_f32_signed
  */
-static inline int __attribute__((always_inline)) strconv_f64_signed(const char* str, f64* out) { STRCONV_FLOAT64_SIGNED(str, out); }
+ALWAYS_INLINE int strconv_f64_signed(const char* str, f64* out) { STRCONV_FLOAT64_SIGNED(str, out); }
 
 #endif // COMMON_STRCONV_H
